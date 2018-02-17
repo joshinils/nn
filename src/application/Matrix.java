@@ -12,9 +12,9 @@ public class Matrix
 	public Matrix(int zeilen, int spalten, double init)
 	{
 		if (zeilen<1)
-		{	throw(new IndexOutOfBoundsException("Matrix::zeilen war zu klein: "+zeilen));	}
+		{	throw(new IndexOutOfBoundsException("Matrix::Matrix zeilen war zu klein: "+zeilen));	}
 		if (spalten<1)
-		{	throw(new IndexOutOfBoundsException("Matrix::spalten war zu klein: "+spalten));	}
+		{	throw(new IndexOutOfBoundsException("Matrix::Matrix spalten war zu klein: "+spalten));	}
 
 		data=new double[zeilen][spalten];
 		
@@ -26,9 +26,9 @@ public class Matrix
 	public static Matrix add(Matrix a, Matrix b) throws Exception
 	{
 		if(a.data.length!=b.data.length)
-			throw(new Exception("Matrix::Dimensionen der Zeilen haut nicht hin! "+a.data.length+"*x != "+b.data.length+"*x"));
+			throw(new Exception("Matrix::add Dimensionen der Zeilen haut nicht hin! "+a.data.length+"*x != "+b.data.length+"*x"));
 		if(a.data[0].length!=b.data[0].length)
-			throw(new Exception("Matrix::Dimensionen der Spalten haut nicht hin! x*"+a.data[0].length+" != x*"+b.data[0].length));
+			throw(new Exception("Matrix::add Dimensionen der Spalten haut nicht hin! x*"+a.data[0].length+" != x*"+b.data[0].length));
 		
 		Matrix erg = new Matrix(a.data.length, a.data[0].length);
 		
@@ -45,20 +45,63 @@ public class Matrix
 	public static Matrix mult(Matrix a, Matrix b) throws Exception
 	{
 		if(a.data.length!=b.data[0].length)
-			throw(new Exception("Matrix::Dimensionen der Zeilen haut nicht hin! "+a.data.length+"*x != x*"+b.data[0].length));
+			throw(new Exception("Matrix::mult Dimensionen der Zeilen haut nicht hin! "+a.data.length+"*x != x*"+b.data[0].length));
 		if(a.data[0].length!=b.data.length)
-			throw(new Exception("Matrix::Dimensionen der Spalten haut nicht hin! x*"+a.data[0].length+" != "+b.data.length+"*x"));
+			throw(new Exception("Matrix::mult Dimensionen der Spalten haut nicht hin! x*"+a.data[0].length+" != "+b.data.length+"*x"));
 		
 		Matrix erg = new Matrix(a.data.length, b.data[0].length, 0.0);
 		
 		for (int i = 0; i < erg.data.length; i++)
 			for (int j = 0; j < erg.data[0].length; j++)
 				for (int k = 0; k < a.data[0].length; k++)
-					erg.data[i][j]
-							+=
-							a.data[i][k]
-									*
-									b.data[k][j];
+					erg.data[i][j]+=a.data[i][k]*b.data[k][j];
+		return erg;
+	}
+	
+	public static Matrix hadamard(Matrix a, Matrix b) throws Exception
+	{
+		if(a.data.length!=b.data.length)
+			throw(new Exception("Matrix::hadamard Dimensionen der Zeilen haut nicht hin! "+a.data.length+"*x != "+b.data.length+"*x"));
+		if(a.data[0].length!=b.data[0].length)
+			throw(new Exception("Matrix::hadamard Dimensionen der Spalten haut nicht hin! x*"+a.data[0].length+" != x*"+b.data[0].length));
+		Matrix erg=new Matrix(a.data.length, a.data[0].length);
+		for (int i = 0; i < erg.data.length; i++)
+			for (int j = 0; j < erg.data[0].length; j++)
+				erg.data[i][j]=a.data[i][j]*b.data[i][j];
+		return erg;
+	}
+	
+	public static Matrix eye(int zeilen, int spalten)
+	{
+		Matrix erg=new Matrix(zeilen, spalten);
+		for (int i = 0; i < erg.data.length&&i<erg.data[0].length; i++)
+			erg.data[i][i]=1;
+		return erg;
+	}
+		
+	public static Matrix clone(Matrix a)
+	{
+		Matrix erg=new Matrix(a.data.length, a.data[0].length);
+		for (int i = 0; i < a.data.length; i++)
+			erg.data[i]=a.data[i].clone();
+		return erg;
+	}
+	
+	public static Matrix scale(Matrix a, double s)
+	{
+		Matrix erg= new Matrix(a.data.length, a.data[0].length);
+		for (int i = 0; i < a.data.length; i++)
+			for (int j = 0; j < a.data[0].length; j++)
+				erg.data[i][j]=a.data[i][j]*s;
+		return erg;
+	}
+	
+	public static Matrix transpose(Matrix a) 
+	{
+		Matrix erg=new Matrix(a.data[0].length, a.data.length);
+		for (int i = 0; i < a.data.length; i++)
+			for (int j = 0; j < a.data[0].length; j++)
+				erg.data[j][i]=a.data[i][j];
 		return erg;
 	}
 	
@@ -81,11 +124,19 @@ public class Matrix
 	@Override
 	public String toString()
 	{
-		String erg="[";//="Matrix:\n[";
+		int len=0;
+		for (int i = 0; i < data.length; i++)
+			for (int j = 0; j < data[0].length; j++)
+			{	
+				int curr_len=String.format("% f",data[i][j]).length();
+				if(len<curr_len)
+					len=curr_len;
+			}
+		String erg="[";
 		for (int i = 0; i < data.length; i++)
 		{
 			for (int j = 0; j < data[i].length; j++)
-				erg+=data[i][j]+" ";
+				erg+=String.format("% "+len+"f", data[i][j])+" ";
 			erg+="\n ";
 		}
 		erg=erg.substring(0, erg.length()-3);
