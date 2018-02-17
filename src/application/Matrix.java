@@ -23,6 +23,23 @@ public class Matrix
 				data[i][j]=init;		
 	}
 	
+	public static Matrix makeVec(double[] a)
+	{
+		Matrix erg=new Matrix(a.length, 1);
+		for (int i = 0; i < erg.data.length; i++)
+			erg.data[i][0]=a[i];
+		return erg;
+	}
+	
+	public static Matrix makeMat(double[][] a)
+	{
+		Matrix erg=new Matrix(a.length, a[0].length);
+		for (int i = 0; i < erg.data.length; i++)
+			for (int j = 0; j < a[0].length; j++)
+				erg.data[i][j]=a[i][j];
+		return erg;
+	}
+	
 	public static Matrix add(Matrix a, Matrix b) throws Exception
 	{
 		if(a.data.length!=b.data.length)
@@ -44,8 +61,6 @@ public class Matrix
 	
 	public static Matrix mult(Matrix a, Matrix b) throws Exception
 	{
-		if(a.data.length!=b.data[0].length)
-			throw(new Exception("Matrix::mult Dimensionen der Zeilen haut nicht hin! "+a.data.length+"*x != x*"+b.data[0].length));
 		if(a.data[0].length!=b.data.length)
 			throw(new Exception("Matrix::mult Dimensionen der Spalten haut nicht hin! x*"+a.data[0].length+" != "+b.data.length+"*x"));
 		
@@ -87,6 +102,16 @@ public class Matrix
 		return erg;
 	}
 	
+	public static Matrix random(int zeilen, int spalten, double min, double max)
+	{
+		double interval=max-min;
+		Matrix erg=new Matrix(zeilen, spalten);
+		for (int i = 0; i < erg.data.length; i++)
+			for (int j = 0; j < erg.data[0].length; j++)
+				erg.data[i][j]=Math.random()*interval+min;
+		return erg;
+	}
+	
 	public static Matrix scale(Matrix a, double s)
 	{
 		Matrix erg= new Matrix(a.data.length, a.data[0].length);
@@ -121,6 +146,16 @@ public class Matrix
 		throw(new IndexOutOfBoundsException("Matrix:: indexzugriff bei ("+i+" "+j+") nicht erlaubt!"));
 	}
 	
+	public int rows()
+	{
+		return data.length;
+	}
+	
+	public int collumns()
+	{
+		return data[0].length;
+	}
+	
 	@Override
 	public String toString()
 	{
@@ -142,6 +177,8 @@ public class Matrix
 		erg=erg.substring(0, erg.length()-3);
 		return erg+"]";
 	}
+
+
 }
 
 
