@@ -1,8 +1,12 @@
 package application;
 
+import java.io.File;
+import javax.imageio.ImageIO;
 import javafx.application.Application;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.stage.Stage;
 import javafx.scene.Scene;
+import javafx.scene.image.WritableImage;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
@@ -17,23 +21,24 @@ public class Main extends Application {
 			primaryStage.setScene(scene);
 			primaryStage.show();
 			
-			
-//			int[] h={10, 9, 8, 7, 6, 5, 4};
-			int[] h={100,100,100,100,100,100,100,100,100,100};
+			int[] h={ 1 };
 			NN netz =new NN(2, h, 3);
 			
-//			System.out.println(netz);
+			double[] train_input= {1,1};
+			double[] train_output= {1,1,1};
 			
-			int resolution=1;
-			double scale=25;
+			netz.registerTrainingData(Matrix.makeVec(train_input), Matrix.makeVec(train_output));
+			
+			netz.trainEpoch(10);
+			
+			int resolution=10;
+			double scale=20;// distance in coords from -x to x
 			
 			int pixel_amount=(int) (root.getHeight()/resolution);
 			
 			Rectangle[][] pixel=new Rectangle[pixel_amount][pixel_amount];
 			
-			double[] _v= {1.0, 1.0};			
-			Matrix _erg=netz.think(Matrix.scale(Matrix.makeVec(_v),scale));
-			
+			System.out.println("\nDrawing");
 			for (int i = 0; i < pixel.length; i++)
 			{
 				for (int j = 0; j < pixel[0].length; j++)
@@ -41,14 +46,20 @@ public class Main extends Application {
 					pixel[i][j]=new Rectangle(i*resolution, j*resolution, resolution, resolution);
 					root.getChildren().add(pixel[i][j]);
 					double[] v= {(i-pixel_amount/2)/(double)pixel.length, (j-pixel_amount/2)/(double)pixel[0].length};
-			//		System.out.println("v:"+Matrix.scale(Matrix.makeVec(v),scale));
+//					System.out.println(scale*v[0]+" "+scale*v[1]);
+//					System.out.println("v:"+Matrix.scale(Matrix.makeVec(v),scale));
 					Matrix erg=netz.think(Matrix.scale(Matrix.makeVec(v),scale));
-					Color c= new Color(erg.get(0, 0), erg.get(1, 0), erg.get(2, 0), 1);//erg.get(3, 0));
+					Color c= new Color(erg.get(0, 0), erg.get(1, 0), erg.get(2, 0), 1);// erg.get(3, 0));
 					pixel[i][j].setFill(c);
 				}
-				System.out.println(i/(double)pixel.length*100);
+				System.out.println(i/(double)pixel.length*100+"%");
 			}
+			WritableImage img=root.snapshot(null, null);
+			File f=new File(netz.parameters()+" "+System.currentTimeMillis()+" "+Integer.toString(img.hashCode())+".png");
+			ImageIO.write(SwingFXUtils.fromFXImage(img, null), "png", f );
 			System.out.println("done drawing!");
+			System.exit(0); // leave and dont gunk up ram
+
 		} catch(Exception e) {
 			e.printStackTrace();
 		}
@@ -82,7 +93,6 @@ public class Main extends Application {
 		System.out.println("m:\n"+m);
 		System.out.println("c:\n"+c);
 */	
-		
 		launch(args);
 		System.exit(0); // leave and dont gunk up ram
 	}

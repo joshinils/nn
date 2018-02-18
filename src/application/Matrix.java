@@ -50,12 +50,24 @@ public class Matrix
 		Matrix erg = new Matrix(a.data.length, a.data[0].length);
 		
 		for (int i = 0; i < a.data.length; i++)
-		{
 			for (int j = 0; j < a.data[0].length; j++)
-			{
 				erg.data[i][j]=a.data[i][j]+b.data[i][j];
-			}
-		}	
+		return erg;
+	}
+	
+
+	public static Matrix subtract(Matrix a, Matrix b) throws Exception
+	{
+		if(a.data.length!=b.data.length)
+			throw(new Exception("Matrix::subtract Dimensionen der Zeilen haut nicht hin! "+a.data.length+"*x != "+b.data.length+"*x"));
+		if(a.data[0].length!=b.data[0].length)
+			throw(new Exception("Matrix::subtract Dimensionen der Spalten haut nicht hin! x*"+a.data[0].length+" != x*"+b.data[0].length));
+		
+		Matrix erg = new Matrix(a.data.length, a.data[0].length);
+		
+		for (int i = 0; i < a.data.length; i++)
+			for (int j = 0; j < a.data[0].length; j++)
+				erg.data[i][j]=a.data[i][j] - b.data[i][j];
 		return erg;
 	}
 	
@@ -177,8 +189,6 @@ public class Matrix
 		erg=erg.substring(0, erg.length()-3);
 		return erg+"]";
 	}
-
-
 }
 
 
