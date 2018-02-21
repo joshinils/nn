@@ -1,5 +1,10 @@
 package application;
 
+import java.time.chrono.MinguoChronology;
+import java.util.function.Function;
+
+import org.omg.CORBA.PUBLIC_MEMBER;
+
 public class Matrix
 {
 	private double[][] data;
@@ -122,6 +127,25 @@ public class Matrix
 			for (int j = 0; j < erg.data[0].length; j++)
 				erg.data[i][j]=Math.random()*interval+min;
 		return erg;
+	}
+	
+	public Matrix apply(Function<Double, Double> foo)
+	{
+		Matrix erg=new Matrix(rows(), collumns());
+		for (int i = 0; i < data.length; i++)
+			for (int j = 0; j < data[0].length; j++)
+				erg.data[i][j]=foo.apply(data[i][j]);
+		return erg;
+	}
+	
+	public double max()
+	{
+		double max=Double.NEGATIVE_INFINITY;
+		for (int i = 0; i < data.length; i++)
+			for (int j = 0; j < data[0].length; j++)
+				if(max<data[i][j])
+					max=data[i][j];
+		return max;
 	}
 	
 	public static Matrix scale(Matrix a, double s)

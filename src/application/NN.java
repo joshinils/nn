@@ -91,46 +91,54 @@ public class NN
 		if(batchSize>training_data.size())
 			batchSize=training_data.size();
 		
-		ArrayList<Matrix[]> leftToTrain = training_data;
+		@SuppressWarnings("unchecked")
+		ArrayList<Matrix[]> leftToTrain = (ArrayList<Matrix[]>) training_data.clone();
 		// shuffle randomly
 		leftToTrain.sort(new Comparator<Matrix[]>()
 		{	@Override public int compare(Matrix[] o1, Matrix[] o2) { if(Math.random()>.5) return 1; return -1;}		});
 		
 		while (!leftToTrain.isEmpty())
 		{			
-			Matrix[] delta_weight=new Matrix[weight.length];
-			Matrix[] delta_bias=new Matrix[bias.length];
-			for (int i = 0; i < delta_weight.length; i++)
-			{
-				delta_weight[i]=new Matrix(weight[i].rows(), weight[i].collumns());
-				delta_bias[i]=new Matrix(bias[i].rows(), 1);
-			}
-
 			// do one batch
 			for (int i = 0; i < batchSize && !leftToTrain.isEmpty(); i++)
 			{
-				System.out.println(this);
+				Matrix[] delta_weight=new Matrix[weight.length];
+				Matrix[] delta_bias=new Matrix[bias.length];
+				for (int j = 0; j < delta_weight.length; j++)
+				{
+					delta_weight[j]=new Matrix(weight[j].rows(), weight[j].collumns());
+					delta_bias[j]=new Matrix(bias[j].rows(), 1);
+				}
+
+//				System.out.println(this);
+//				System.out.println();
 
 				Matrix activation[]=new Matrix[weight.length];//Layers + output
 				activation[0]=sigmoid(Matrix.add( Matrix.mult(weight[0], leftToTrain.get(0)[0]), bias[0]) );
-				System.out.println("activation[0]\n"+activation[0]);
+//				System.out.println("activation[0]\n"+activation[0]);
 				for (int j = 1; j < weight.length; j++)
 				{
 					activation[j] = sigmoid(Matrix.add( Matrix.mult(weight[j], activation[j-1]), bias[j]) );
-					System.out.println("activation["+(j)+"]\n"+activation[j]);
+//					System.out.println("activation["+(j)+"]\n"+activation[j]);
 				}
 				
 				Matrix error[]=new Matrix[activation.length];
 				error[error.length-1]=Matrix.scale(Matrix.subtract(leftToTrain.get(0)[1], activation[activation.length -1]), learning_rate);//prediction - computed
 				
+//				System.out.println("Leror["+(error.length-1)+"]\n"+error[error.length-1]);
+				
 				// calculate error backwards
 				for (int e = error.length-2; e >=0 ; e--)
-					error[e]=Matrix.scale(Matrix.mult(Matrix.transpose(weight[e]), error[e+1]), learning_rate);
+				{
+//					System.out.println("computing error nr:"+e);
+					error[e]=Matrix.scale(Matrix.mult( Matrix.transpose(weight[e+1]), error[e+1]), learning_rate);
+//					System.out.println("error["+e+"]\n"+error[e]);
+				}
+//				System.out.println("\ncomputed errors:");
+//for (int j = 0; j < error.length; j++)
+//{	System.out.println("error["+j+"]\n"+error[j]);	}
 
-for (int j = 0; j < error.length; j++)
-{	System.out.println("error["+j+"]\n"+error[j]);	}
-
-System.out.println();
+//System.out.println();
 
 				for (int j = 0; j < delta_weight.length; j++)
 				{
@@ -142,22 +150,33 @@ System.out.println();
 								)
 							)
 						);
-					Matrix new_delta_weight=Matrix.mult(new_delta_bias, Matrix.transpose(activation[j+1]));
+					Matrix new_delta_weight;
+					if(j>0)
+						new_delta_weight=Matrix.mult(new_delta_bias, Matrix.transpose(activation[j-1]));
+					else
+						new_delta_weight=Matrix.mult(new_delta_bias, Matrix.transpose(leftToTrain.get(0)[0]));
 					
-					System.out.println("new_delta_bias "+j+" \n"+new_delta_bias);
-					System.out.println("new_delta_weight "+j+" \n"+new_delta_weight);
+//					System.out.println("new_delta_bias "+j+" \n"+new_delta_bias);
+//					System.out.println("new_delta_weight "+j+" \n"+new_delta_weight);
 					
 					delta_bias[j]=Matrix.add(delta_bias[j], new_delta_bias);
 					delta_weight[j]=Matrix.add(delta_weight[j], new_delta_weight);
 					
-					System.out.println("delta_bias["+j+"]\n"+delta_bias[j]);
-					System.out.println("delta_weight["+j+"]\n"+delta_weight[j]);
-					System.out.println();
+//					System.out.println("delta_bias["+j+"]\n"+delta_bias[j]);
+//					System.out.println("delta_weight["+j+"]\n"+delta_weight[j]);
+//					System.out.println();
+				}
+				
+				for (int j = 0; j < weight.length; j++)
+				{
+					weight[j]=Matrix.add(weight[j], delta_weight[j]);
+					bias[j]=Matrix.add(bias[j], delta_bias[j]);
 				}
 
 				leftToTrain.remove(0);
 			}
 		}
+//		System.out.println(this);
 	}
 
 	public Matrix think(Matrix input) throws Exception
@@ -175,6 +194,41 @@ System.out.println();
 //			System.out.println();
 		}
 //		System.out.println("final erg:"+erg);
+		return erg;
+	}
+	
+	public Matrix trainingError() throws Exception
+	{
+		Matrix max_err=new Matrix(training_data.get(0)[1].rows(), 1);
+		Matrix two_err=new Matrix(training_data.get(0)[1].rows(), 1);
+		Matrix avg_err=new Matrix(training_data.get(0)[1].rows(), 1);
+		for (Matrix[] data : training_data)
+		{
+			Matrix erg=think(data[0]);
+			Matrix out_error=Matrix.subtract(erg, data[1]);
+			for (int i = 0; i < out_error.rows(); i++)
+			{
+				if(out_error.get(i, 0)<0)
+					out_error.set(i, 0, -out_error.get(i, 0));
+				if(out_error.get(i, 0)>max_err.get(i, 0))
+					max_err.set(i, 0, out_error.get(i, 0));
+			}
+			avg_err=Matrix.add(avg_err, out_error);
+			two_err=Matrix.add((out_error).apply(x->x*x), two_err);
+		}
+		two_err=(two_err).apply(x->Math.sqrt(x));
+		avg_err=(avg_err).apply(x->x/training_data.size());
+		Matrix s=new Matrix(1, 3);
+		s.set(0, 0, 1);
+		Matrix erg=Matrix.mult(max_err, s);
+
+		s.set(0, 0, 0);
+		s.set(0, 1, 1);
+		erg=Matrix.add(erg, Matrix.mult(two_err, s));
+		
+		s.set(0, 1, 0);
+		s.set(0, 2, 1);
+		erg=Matrix.add(erg, Matrix.mult(avg_err, s));
 		return erg;
 	}
 

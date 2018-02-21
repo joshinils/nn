@@ -21,18 +21,129 @@ public class Main extends Application {
 			primaryStage.setScene(scene);
 			primaryStage.show();
 			
-			int[] h={ 1 };
+			int[] h={ 100, 100, 10 };
 			NN netz =new NN(2, h, 3);
 			
-			double[] train_input= {1,1};
-			double[] train_output= {1,1,1};
+			double[] train_input= new double[2];
+			double[] train_output= new double[3];
+/*			train_input[0]= 1;
+			train_input[1]= 1;
+			train_output[0]=0;
+			train_output[1]=0;
+			train_output[2]=0;
+			netz.registerTrainingData(Matrix.makeVec(train_input), Matrix.makeVec(train_output));
+			train_input[0]= 1;
+			train_input[1]=-1;
+			train_output[0]=1;
+			train_output[1]=1;
+			train_output[2]=1;
+			netz.registerTrainingData(Matrix.makeVec(train_input), Matrix.makeVec(train_output));
+			train_input[0]=-1;
+			train_input[1]= 1;
+			train_output[0]=1;
+			train_output[1]=1;
+			train_output[2]=1;
+			netz.registerTrainingData(Matrix.makeVec(train_input), Matrix.makeVec(train_output));
+			train_input[0]=-1;
+			train_input[1]=-1;
+			train_output[0]=0;
+			train_output[1]=0;
+			train_output[2]=0;
+			netz.registerTrainingData(Matrix.makeVec(train_input), Matrix.makeVec(train_output));
+*/	
 			
+			train_input[0]= 10;
+			train_input[1]= 10;
+			train_output[0]=0;
+			train_output[1]=0;
+			train_output[2]=0;
 			netz.registerTrainingData(Matrix.makeVec(train_input), Matrix.makeVec(train_output));
 			
-			netz.trainEpoch(10);
+			train_input[0]= 10;
+			train_input[1]= 0;
+			train_output[0]=1;
+			train_output[1]=0;
+			train_output[2]=0;
+			netz.registerTrainingData(Matrix.makeVec(train_input), Matrix.makeVec(train_output));
+
+			train_input[0]= 10;
+			train_input[1]=-10;
+			train_output[0]=0;
+			train_output[1]=1;
+			train_output[2]=0;
+			netz.registerTrainingData(Matrix.makeVec(train_input), Matrix.makeVec(train_output));
+
+			train_input[0]=0;
+			train_input[1]=10;
+			train_output[0]=1;
+			train_output[1]=1;
+			train_output[2]=0;
+			netz.registerTrainingData(Matrix.makeVec(train_input), Matrix.makeVec(train_output));
+
+			train_input[0]=0;
+			train_input[1]=-10;
+			train_output[0]=0;
+			train_output[1]=0;
+			train_output[2]=1;
+			netz.registerTrainingData(Matrix.makeVec(train_input), Matrix.makeVec(train_output));
+
+			train_input[0]=-10;
+			train_input[1]=10;
+			train_output[0]=1;
+			train_output[1]=0;
+			train_output[2]=1;
+			netz.registerTrainingData(Matrix.makeVec(train_input), Matrix.makeVec(train_output));
+
+			train_input[0]=-10;
+			train_input[1]= 0;
+			train_output[0]=0;
+			train_output[1]=1;
+			train_output[2]=1;
+			netz.registerTrainingData(Matrix.makeVec(train_input), Matrix.makeVec(train_output));
+
+			train_input[0]=-10;
+			train_input[1]= -10;
+			train_output[0]=1;
+			train_output[1]=1;
+			train_output[2]=1;
+			netz.registerTrainingData(Matrix.makeVec(train_input), Matrix.makeVec(train_output));
 			
-			int resolution=10;
-			double scale=20;// distance in coords from -x to x
+/*			for (Double i = 0.; i < 2*Math.PI; i+=Math.PI/2)
+			{
+				train_input[0]=15*Math.cos(i);
+				train_input[1]=15*Math.sin(i);
+				train_output[0]=0;
+				train_output[1]=0;
+				train_output[2]=0;
+				netz.registerTrainingData(Matrix.makeVec(train_input), Matrix.makeVec(train_output));
+			}
+*/
+
+//			System.out.println("vor training \n"+netz);
+			int training_epochs=100000;
+			double min_error=0.01;
+			for (int r = 0; r < training_epochs; r++)
+			{
+				netz.trainEpoch(6);
+				if(r%1000==0)
+				{
+					System.out.println("training: "+r/(double)training_epochs*100+"%");
+					Matrix training_error=netz.trainingError();					
+					System.out.println("error: \n"+Matrix.transpose(training_error)+"\n");
+					if(training_error.max() < min_error)
+					{
+						System.out.println("stopping training early after "+r+" epochs");
+						break; // stop training early
+					}
+				}
+			}
+			System.out.println("completed training of "+ training_epochs+" epochs");
+			
+//			System.out.println("\nnach training \n"+netz);
+
+			
+			int resolution=1;
+			double scale=15;// distance in coords from -x to x
 			
 			int pixel_amount=(int) (root.getHeight()/resolution);
 			
@@ -51,14 +162,17 @@ public class Main extends Application {
 					Matrix erg=netz.think(Matrix.scale(Matrix.makeVec(v),scale));
 					Color c= new Color(erg.get(0, 0), erg.get(1, 0), erg.get(2, 0), 1);// erg.get(3, 0));
 					pixel[i][j].setFill(c);
+					
+					if((i*pixel.length+j)%10000==0)
+						System.out.println("drawing: "+(i*pixel.length+j)/(double)(pixel.length*pixel.length)*100+"%");
 				}
-				System.out.println(i/(double)pixel.length*100+"%");
 			}
+			
 			WritableImage img=root.snapshot(null, null);
 			File f=new File(netz.parameters()+" "+System.currentTimeMillis()+" "+Integer.toString(img.hashCode())+".png");
 			ImageIO.write(SwingFXUtils.fromFXImage(img, null), "png", f );
 			System.out.println("done drawing!");
-			System.exit(0); // leave and dont gunk up ram
+//			System.exit(0); // leave and dont gunk up ram
 
 		} catch(Exception e) {
 			e.printStackTrace();
