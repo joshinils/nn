@@ -1,7 +1,16 @@
 package application;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.NotSerializableException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+
 import javax.imageio.ImageIO;
+
 import javafx.application.Application;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.stage.Stage;
@@ -21,7 +30,9 @@ public class Main extends Application {
 			primaryStage.setScene(scene);
 			primaryStage.show();
 			
-			int[] h={ 100, 100, 10 };
+			int[] h={ 10 };
+			
+			
 			NN netz =new NN(2, h, 3);
 			
 			double[] train_input= new double[2];
@@ -51,7 +62,7 @@ public class Main extends Application {
 			train_output[2]=0;
 			netz.registerTrainingData(Matrix.makeVec(train_input), Matrix.makeVec(train_output));
 */	
-			
+/*	
 			train_input[0]= 10;
 			train_input[1]= 10;
 			train_output[0]=0;
@@ -108,41 +119,49 @@ public class Main extends Application {
 			train_output[2]=1;
 			netz.registerTrainingData(Matrix.makeVec(train_input), Matrix.makeVec(train_output));
 			
-/*			for (Double i = 0.; i < 2*Math.PI; i+=Math.PI/2)
+/*/			
+			for (Double i = 0.; i < 2*Math.PI; i+=Math.PI/100)
 			{
 				train_input[0]=15*Math.cos(i);
 				train_input[1]=15*Math.sin(i);
-				train_output[0]=0;
-				train_output[1]=0;
-				train_output[2]=0;
+				Color hsb=Color.hsb(i/(Math.PI)*180, 1, 1);
+				train_output[0]=hsb.getRed();
+				train_output[1]=hsb.getGreen();
+				train_output[2]=hsb.getBlue();
+				System.out.println(hsb.getRed()+" "+hsb.getGreen()+" "+hsb.getBlue());
 				netz.registerTrainingData(Matrix.makeVec(train_input), Matrix.makeVec(train_output));
 			}
-*/
+			System.out.println(netz.trainingDataAmount());
+//*/
 
 //			System.out.println("vor training \n"+netz);
 			int training_epochs=100000;
 			double min_error=0.01;
 			for (int r = 0; r < training_epochs; r++)
 			{
-				netz.trainEpoch(6);
-				if(r%1000==0)
+				netz.trainEpoch(50);
+				if(r%100==0)
 				{
 					System.out.println("training: "+r/(double)training_epochs*100+"%");
 					Matrix training_error=netz.trainingError();					
 					System.out.println("error: \n"+Matrix.transpose(training_error)+"\n");
-					if(training_error.max() < min_error)
+					double m=training_error.max();
+					if( m < min_error)
 					{
 						System.out.println("stopping training early after "+r+" epochs");
 						break; // stop training early
+					}
+					else {
+						netz.setLearning_rate(m *.6);
+						System.out.println("Max E: "+m+" Lernrate: "+netz.getLearning_rate());
 					}
 				}
 			}
 			System.out.println("completed training of "+ training_epochs+" epochs");
 			
 //			System.out.println("\nnach training \n"+netz);
-
 			
-			int resolution=1;
+			int resolution=3;
 			double scale=15;// distance in coords from -x to x
 			
 			int pixel_amount=(int) (root.getHeight()/resolution);
@@ -206,10 +225,56 @@ public class Main extends Application {
 		c=Matrix.scale(c, 5);
 		System.out.println("m:\n"+m);
 		System.out.println("c:\n"+c);
-*/	
+*/
+				
 		launch(args);
 		System.exit(0); // leave and dont gunk up ram
 	}
+	
+	public static void writeToFile(File path, Object data)
+	{
+	    try(ObjectOutputStream write= new ObjectOutputStream (new FileOutputStream(path)))
+	    {
+	        write.writeObject(data);
+	    }
+	    catch(NotSerializableException nse)
+	    {
+	        //do something
+	    	System.out.println("NotSerializableException");
+	    }
+	    catch(IOException eio)
+	    {
+	    	System.out.println("IOException");
+	        //do something
+	    }
+	}
+	
+	public static Object readFromFile(File path)
+	{
+	    Object data = null;
+
+	    try(ObjectInputStream inFile = new ObjectInputStream(new FileInputStream(path)))
+	    {
+	        data = inFile.readObject();
+	        return data;
+	    }
+	    catch(ClassNotFoundException cnfe)
+	    {
+	    	System.out.println("ClassNotFoundException");
+	        //do something
+	    }
+	    catch(FileNotFoundException fnfe)
+	    {
+	    	System.out.println("FileNotFoundException");
+	        //do something
+	    }
+	    catch(IOException e)
+	    {
+	    	System.out.println("IOException");
+	        //do something
+	    }
+	    return data;
+	}   
 }
 
 

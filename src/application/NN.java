@@ -1,10 +1,13 @@
 package application;
 
+import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 
-public class NN
+public class NN implements Serializable
 {
+	private static final long serialVersionUID = -9043404844076109142L;
 	private Matrix[] weight;
 	private Matrix[] bias;
 	
@@ -94,8 +97,9 @@ public class NN
 		@SuppressWarnings("unchecked")
 		ArrayList<Matrix[]> leftToTrain = (ArrayList<Matrix[]>) training_data.clone();
 		// shuffle randomly
-		leftToTrain.sort(new Comparator<Matrix[]>()
-		{	@Override public int compare(Matrix[] o1, Matrix[] o2) { if(Math.random()>.5) return 1; return -1;}		});
+		Collections.shuffle(leftToTrain);
+//		leftToTrain.sort(new Comparator<Matrix[]>()
+//		{	@Override public int compare(Matrix[] o1, Matrix[] o2) { if(Math.random()>.5) return 1; return -1;}		});
 		
 		while (!leftToTrain.isEmpty())
 		{			
@@ -232,6 +236,16 @@ public class NN
 		return erg;
 	}
 
+	public double getLearning_rate()
+	{
+		return learning_rate;
+	}
+
+	public void setLearning_rate(double learning_rate)
+	{
+		this.learning_rate = learning_rate;
+	}
+
 	@Override
 	public String toString()
 	{
@@ -251,6 +265,11 @@ public class NN
 		for (int i = 0; i < weight.length-1; i++)
 			erg+=" "+weight[i].rows();
 		return erg+", "+weight[weight.length -1].rows()+"}";
+	}
+
+	public int trainingDataAmount()
+	{
+		return training_data.size();
 	}
 }
 

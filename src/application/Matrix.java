@@ -1,12 +1,11 @@
 package application;
 
-import java.time.chrono.MinguoChronology;
+import java.io.Serializable;
 import java.util.function.Function;
 
-import org.omg.CORBA.PUBLIC_MEMBER;
-
-public class Matrix
+public class Matrix implements Serializable
 {
+	private static final long serialVersionUID = 1797362920197310523L;
 	private double[][] data;
 	
 	public Matrix(int zeilen, int spalten ) throws IndexOutOfBoundsException
@@ -83,10 +82,45 @@ public class Matrix
 		
 		Matrix erg = new Matrix(a.data.length, b.data[0].length, 0.0);
 		
+		/*
+		class entryMultiplier implements Runnable
+		{
+			Matrix a;
+			Matrix b;
+			Matrix erg;
+			int i;
+			int j;
+			public entryMultiplier(Matrix a, Matrix b, Matrix erg, int i, int j)
+			{
+				this.a=a;
+				this.b=b;
+				this.erg=erg;
+				this.i=i;
+				this.j=j;
+			}
+			@Override
+			public void run()
+			{
+				for (int k = 0; k < a.data[0].length; k++)
+				{
+					erg.data[i][j]+=a.data[i][k]*b.data[k][j];
+				}
+			//	System.out.println(this.getName());
+			}
+		}
+		
+		ExecutorService woo=Executors.newFixedThreadPool(1);
+		//*/
+		
 		for (int i = 0; i < erg.data.length; i++)
 			for (int j = 0; j < erg.data[0].length; j++)
+			{
+//				woo.execute(new entryMultiplier(a, b, erg, i, j));
 				for (int k = 0; k < a.data[0].length; k++)
 					erg.data[i][j]+=a.data[i][k]*b.data[k][j];
+			}
+//		woo.shutdown();
+//		woo.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS);
 		return erg;
 	}
 	
