@@ -30,13 +30,14 @@ public class Main extends Application {
 			primaryStage.setScene(scene);
 			primaryStage.show();
 			
-			int[] h={ 10 };
+			int[] h={ 200 };
 			
 			
-			NN netz =new NN(2, h, 3);
+			int out_amt=1;
+			NN netz =new NN(2, h, out_amt);
 			
 			double[] train_input= new double[2];
-			double[] train_output= new double[3];
+			double[] train_output= new double[out_amt];
 /*			train_input[0]= 1;
 			train_input[1]= 1;
 			train_output[0]=0;
@@ -119,7 +120,7 @@ public class Main extends Application {
 			train_output[2]=1;
 			netz.registerTrainingData(Matrix.makeVec(train_input), Matrix.makeVec(train_output));
 			
-/*/			
+/*			
 			for (Double i = 0.; i < 2*Math.PI; i+=Math.PI/100)
 			{
 				train_input[0]=15*Math.cos(i);
@@ -134,30 +135,74 @@ public class Main extends Application {
 			System.out.println(netz.trainingDataAmount());
 //*/
 
-//			System.out.println("vor training \n"+netz);
-			int training_epochs=100000;
-			double min_error=0.01;
-			for (int r = 0; r < training_epochs; r++)
+			// generate chessboard
+			int chessSize=5;
+			for (int i = 0; i < chessSize; i++)
 			{
-				netz.trainEpoch(50);
-				if(r%100==0)
+				for (int j = 0; j < chessSize; j++)
 				{
-					System.out.println("training: "+r/(double)training_epochs*100+"%");
-					Matrix training_error=netz.trainingError();					
-					System.out.println("error: \n"+Matrix.transpose(training_error)+"\n");
-					double m=training_error.max();
-					if( m < min_error)
-					{
-						System.out.println("stopping training early after "+r+" epochs");
-						break; // stop training early
-					}
-					else {
-						netz.setLearning_rate(m *.6);
-						System.out.println("Max E: "+m+" Lernrate: "+netz.getLearning_rate());
-					}
+					train_input[0]=i+.5;
+					train_input[1]=j+.5;
+					double c=0;
+					
+					if(i%2==0)
+						c++;
+					if(j%2==0)
+						c++;
+					c%=2;
+					
+					train_output[0]=c;
+//					train_output[1]=c;
+//					train_output[2]=c;
+					netz.registerTrainingData(Matrix.makeVec(train_input), Matrix.makeVec(train_output));
 				}
 			}
+			
+//			System.out.println("vor training \n"+netz);
+			int training_epochs=20000;
+			long trained_epochs=0;
+			double min_error=0.01;
+			Matrix first=new Matrix(3, 1, 1);
+			first.set(0, 0, 1);
+			netz.setLearning_rate(2);
+			double lernRate=netz.getLearning_rate();
+			double einsDurchlr=1./lernRate;
+			int batchSize=(int)(netz.trainingDataAmount()/4.0);
+			if (batchSize<=0)
+				batchSize=1;
+			
+			for (int r = 0; r < training_epochs; r++)
+			{
+				int epoch_train_cluster=(int)Math.ceil(einsDurchlr)*3+10;
+				System.out.println("epochs: "+epoch_train_cluster+" ; trained epochs: "+trained_epochs);
+				for (int it = 0; it < epoch_train_cluster; it++)
+				{
+					netz.trainEpoch(batchSize);
+				}
+				trained_epochs+=epoch_train_cluster;
+				
+				System.out.println("training: "+r/(double)training_epochs*100+"%");
+				Matrix training_error=netz.trainingError();					
+				System.out.println("error: \n"+Matrix.transpose(training_error));
+				double m=training_error.max();
+				if( m < min_error)
+				{
+					System.out.println("stopping training early after "+r+" epoch rounds");
+					break; // stop training early
+				}
+				else
+				{
+					lernRate=m *.2;
+					einsDurchlr=1./lernRate;
+					netz.setLearning_rate(lernRate);
+					System.out.println("Max E: "+m+" Lernrate: "+lernRate);
+				}
+				System.out.println();
+			}
 			System.out.println("completed training of "+ training_epochs+" epochs");
+			
+			
+			writeToFile(new File("latestNet "+System.currentTimeMillis()+".nn"), netz);
 			
 //			System.out.println("\nnach training \n"+netz);
 			
@@ -179,7 +224,7 @@ public class Main extends Application {
 //					System.out.println(scale*v[0]+" "+scale*v[1]);
 //					System.out.println("v:"+Matrix.scale(Matrix.makeVec(v),scale));
 					Matrix erg=netz.think(Matrix.scale(Matrix.makeVec(v),scale));
-					Color c= new Color(erg.get(0, 0), erg.get(1, 0), erg.get(2, 0), 1);// erg.get(3, 0));
+					Color c= new Color(erg.get(0, 0), erg.get(0, 0), erg.get(0, 0), 1);// erg.get(3, 0));
 					pixel[i][j].setFill(c);
 					
 					if((i*pixel.length+j)%10000==0)
